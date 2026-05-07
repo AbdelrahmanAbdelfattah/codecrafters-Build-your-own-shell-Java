@@ -11,13 +11,26 @@ public class Main {
              if(command.equals("exit")){
                  break ;
              }
-             else if (command.contains("echo") )
+             else if (command.startsWith("echo") )
              {
                  String result = command.replaceFirst("^echo\\s+", "");
                  System.out.println( result); // Prints "Hello World"
                  continue;
              }
-             System.out.println(command+ ": command not found");
+             else if (command.startsWith("type")) {
+                 String result = command.replaceFirst("^type\\s+", "");
+                 if (result.equals("type") || result.equals("echo") ||  result.equals("exit")) {
+                     System.out.println(result+ " is a shell builtin");
+                 }
+                 else {
+                     System.out.println(result+ ":not fuond");
+                 }
+
+             }
+             else {
+                 System.out.println(command+ ": command not found");
+
+             }
          }
 
     }
