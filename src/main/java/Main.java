@@ -23,7 +23,7 @@ public class Main {
                      System.out.println(result+ " is a shell builtin");
                  }
                  else {
-                     System.out.println(result+ ":not fuond");
+                     System.out.println(result+ ": not fuond");
                  }
 
              }
