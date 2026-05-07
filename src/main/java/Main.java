@@ -14,8 +14,6 @@ public class Main {
              else if (command.contains("echo") )
              {
                  String result = command.replaceFirst("^echo\\s+", "");
-
-                 System.out.println("Original: " + command);
                  System.out.println( result); // Prints "Hello World"
                  continue;
              }
