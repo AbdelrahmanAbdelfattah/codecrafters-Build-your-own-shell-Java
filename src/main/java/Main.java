@@ -1,4 +1,6 @@
 import java.util.Scanner;
+import java.io.File;
+import java.util.regex.Pattern;
 
 public class Main {
     public static void main(String[] args) throws Exception {
@@ -19,11 +21,30 @@ public class Main {
              }
              else if (command.startsWith("type")) {
                  String result = command.replaceFirst("^type\\s+", "");
+                 boolean founded = false;
                  if (result.equals("type") || result.equals("echo") ||  result.equals("exit")) {
                      System.out.println(result+ " is a shell builtin");
                  }
                  else {
-                     System.out.println(result+ ": not found");
+                     String pathVariable = System.getenv("PATH");
+
+                     // This will safely split by ';' on Windows and ':' on Linux
+                     String[] directories = pathVariable.split(Pattern.quote(File.pathSeparator));
+
+
+
+                     for (String directory : directories) {
+                         String PATH = directory +Pattern.quote(File.pathSeparator)+result;
+                         if (new File(PATH).exists() && new File(PATH).canExecute()) {
+                             System.out.println(result+ " is " +PATH);
+                             founded = true;
+                         }
+                     }
+                     if (!founded) {
+
+                     }
+
+
                  }
 
              }
