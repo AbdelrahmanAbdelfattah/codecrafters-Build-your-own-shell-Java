@@ -34,14 +34,15 @@ public class Main {
 
 
                      for (String directory : directories) {
-                         String PATH = directory +Pattern.quote(File.pathSeparator)+result;
+                         String PATH = directory +File.separator+result;
                          if (new File(PATH).exists() && new File(PATH).canExecute()) {
                              System.out.println(result+ " is " +PATH);
                              founded = true;
+                             break;
                          }
                      }
                      if (!founded) {
-
+                         System.out.println(result+ ": not found");
                      }
 
 
