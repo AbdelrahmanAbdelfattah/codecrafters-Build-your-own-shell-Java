@@ -11,6 +11,14 @@ public class Main {
              if(command.equals("exit")){
                  break ;
              }
+             else if (command.contains("echo") )
+             {
+                 String result = command.replaceFirst("^echo\\s+", "");
+
+                 System.out.println("Original: " + command);
+                 System.out.println( result); // Prints "Hello World"
+                 continue;
+             }
              System.out.println(command+ ": command not found");
          }
 
