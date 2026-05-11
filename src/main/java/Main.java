@@ -23,48 +23,54 @@ public class Main {
 
 
     public static void main(String[] args) throws Exception {
-        // TODO: Uncomment the code below to pass the first stage
+        Scanner scanner = new Scanner(System.in);
 
-         Scanner scanner = new Scanner(System.in);
-         while(true){
-             System.out.print("$ ");
-             String command = scanner.nextLine();
-             if(command.equals("exit")){
-                 break ;
-             }
-             else if (command.startsWith("echo") )
-             {
-                 String result = command.replaceFirst("^echo\\s+", "");
-                 System.out.println( result); // Prints "Hello World"
-                 continue;
-             }
-             else if (command.startsWith("type")) {
-                 String result = command.replaceFirst("^type\\s+", "");
+        while (true) {
+            System.out.print("$ ");
+            String input = scanner.nextLine().trim(); // Use a separate variable for the whole line
+            if (input.isEmpty()) continue;
 
-                 // Splits the string by spaces to separate the command from the arguments
-                 String[] commandParts = command.split("\\s+");
+            // Split the string by spaces right away. It's useful for everything.
+            String[] commandParts = input.split("\\s+");
+            String command = commandParts[0]; // The actual command (e.g., "echo", "type", "ls")
 
-                 if (result.equals("type") || result.equals("echo") ||  result.equals("exit")) {
-                     System.out.println(result+ " is a shell builtin");
-                 }
-                 else {
-                     String fullPath = getPath(result);
-                     if (fullPath != null) {
-                         // Now you have the path needed to start the process!
-                         ProcessBuilder pb = new ProcessBuilder(commandParts);
-                         pb.inheritIO().start().waitFor();
-                     } else {
-                         System.out.println(command + ": command not found");
-                     }
+            if (command.equals("exit")) {
+                break;
+            } else if (command.equals("echo")) {
+                // Print everything after "echo "
+                String result = input.replaceFirst("^echo\\s+", "");
+                System.out.println(result);
+                continue;
+            } else if (command.equals("type")) {
+                // The target of the type command is the second word
+                if (commandParts.length < 2) continue;
+                String target = commandParts[1];
 
-                 }
-             }
-             else {
-                 System.out.println(command+ ": command not found");
+                if (target.equals("type") || target.equals("echo") || target.equals("exit")) {
+                    System.out.println(target + " is a shell builtin");
+                } else {
+                    String fullPath = getPath(target);
+                    if (fullPath != null) {
+                        // FIX: type just prints the path, it doesn't run the process!
+                        System.out.println(target + " is " + fullPath);
+                    } else {
+                        // FIX: Print exactly "[target]: not found"
+                        System.out.println(target + ": not found");
+                    }
+                }
+            } else {
+                // FIX: This is where external execution goes!
+                String fullPath = getPath(command);
 
-             }
-         }
-
+                if (fullPath != null) {
+                    // Now you have the path needed to start the process!
+                    ProcessBuilder pb = new ProcessBuilder(commandParts);
+                    pb.inheritIO().start().waitFor();
+                } else {
+                    // If it's not a builtin, and not in the PATH, then it's truly not found
+                    System.out.println(input + ": command not found");
+                }
+            }
+        }
     }
 }
-
