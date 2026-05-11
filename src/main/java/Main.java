@@ -37,31 +37,40 @@ public class Main {
             if (command.equals("exit")) {
                 break;
             } else if (command.equals("echo")) {
-
-
-                // Print everything after "echo "
+                // Get everything after "echo "
                 String result = input.replaceFirst("^echo\\s+", "");
-                StringBuilder parsedString = new StringBuilder();
-                for  (int i = 0; i < result.length(); i++) {
-                    if (result.charAt(i) == '\'' && (i==0 || i == result.length()-1) )
-                    {
-                        continue;
-                    }
 
-                    else
-                    {
-                        if (result.charAt(i) == '\'' && result.charAt(i+1) == '\'')
-                        {
-                            i++;
-                            continue;
+                StringBuilder parsedString = new StringBuilder();
+                boolean isSingleQuote = false;
+
+                for (int i = 0; i < result.length(); i++) {
+                    char c = result.charAt(i);
+
+                    if (c == '\'') {
+                        // Toggle quote state
+                        isSingleQuote = !isSingleQuote;
+                    }
+                    else if (c == ' ') {
+                        if (isSingleQuote) {
+                            // Rule 1: We are inside quotes. Keep ALL spaces exactly as they are.
+                            parsedString.append(c);
+                        } else {
+                            // Rule 2: We are outside quotes. Collapse multiple spaces into one.
+                            // We only append a space if the last character we appended wasn't ALSO a space.
+                            if (parsedString.length() > 0 && parsedString.charAt(parsedString.length() - 1) != ' ') {
+                                parsedString.append(c);
+                            }
                         }
-                        parsedString.append(result.charAt(i));
+                    }
+                    else {
+                        // Normal characters
+                        parsedString.append(c);
                     }
                 }
-                System.out.println(parsedString);
+
+                // Print the final result (using .trim() just in case there were trailing spaces outside quotes)
+                System.out.println(parsedString.toString().trim());
                 continue;
-
-
             } else if (command.equals("type")) {
                 // The target of the type command is the second word
                 if (commandParts.length < 2) continue;
