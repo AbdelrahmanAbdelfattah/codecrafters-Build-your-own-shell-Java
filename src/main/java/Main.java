@@ -37,10 +37,31 @@ public class Main {
             if (command.equals("exit")) {
                 break;
             } else if (command.equals("echo")) {
+
+
                 // Print everything after "echo "
                 String result = input.replaceFirst("^echo\\s+", "");
-                System.out.println(result);
+                StringBuilder parsedString = new StringBuilder();
+                for  (int i = 0; i < result.length(); i++) {
+                    if (result.charAt(i) == '\'' && (i==0 || i == result.length()-1) )
+                    {
+                        continue;
+                    }
+
+                    else
+                    {
+                        if (result.charAt(i) == '\'' && result.charAt(i+1) == '\'')
+                        {
+                            i++;
+                            continue;
+                        }
+                        parsedString.append(result.charAt(i));
+                    }
+                }
+                System.out.println(parsedString);
                 continue;
+
+
             } else if (command.equals("type")) {
                 // The target of the type command is the second word
                 if (commandParts.length < 2) continue;
