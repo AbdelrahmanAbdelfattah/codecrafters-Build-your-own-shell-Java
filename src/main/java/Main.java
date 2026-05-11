@@ -1,5 +1,7 @@
 import java.util.Scanner;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 
 public class Main {
@@ -21,6 +23,36 @@ public class Main {
         return null;
     }
 
+    // Parses a raw input line into a list of arguments, respecting single quotes
+    public static List<String> parseArguments(String input) {
+        List<String> args = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+        boolean inSingleQuote = false;
+
+        for (int i = 0; i < input.length(); i++) {
+            char c = input.charAt(i);
+
+            if (c == '\'' && !inSingleQuote) {
+                inSingleQuote = true;              // enter quote mode
+            } else if (c == '\'' && inSingleQuote) {
+                inSingleQuote = false;             // exit quote mode
+            } else if (c == ' ' && !inSingleQuote) {
+                if (current.length() > 0) {        // end of an argument
+                    args.add(current.toString());
+                    current.setLength(0);
+                }
+            } else {
+                current.append(c);                 // regular character
+            }
+        }
+
+        if (current.length() > 0) {
+            args.add(current.toString());
+        }
+
+        return args;
+    }
+
 
     public static void main(String[] args) throws Exception {
         Scanner scanner = new Scanner(System.in);
@@ -30,51 +62,23 @@ public class Main {
             String input = scanner.nextLine().trim(); // Use a separate variable for the whole line
             if (input.isEmpty()) continue;
 
-            // Split the string by spaces right away. It's useful for everything.
-            String[] commandParts = input.split("\\s+");
-            String command = commandParts[0]; // The actual command (e.g., "echo", "type", "ls")
+            // Parse the input with single-quote awareness
+            List<String> parts = parseArguments(input);
+            String command = parts.get(0);
 
             if (command.equals("exit")) {
                 break;
             } else if (command.equals("echo")) {
-                // Get everything after "echo "
-                String result = input.replaceFirst("^echo\\s+", "");
-
-                StringBuilder parsedString = new StringBuilder();
-                boolean isSingleQuote = false;
-
-                for (int i = 0; i < result.length(); i++) {
-                    char c = result.charAt(i);
-
-                    if (c == '\'') {
-                        // Toggle quote state
-                        isSingleQuote = !isSingleQuote;
-                    }
-                    else if (c == ' ') {
-                        if (isSingleQuote) {
-                            // Rule 1: We are inside quotes. Keep ALL spaces exactly as they are.
-                            parsedString.append(c);
-                        } else {
-                            // Rule 2: We are outside quotes. Collapse multiple spaces into one.
-                            // We only append a space if the last character we appended wasn't ALSO a space.
-                            if (parsedString.length() > 0 && parsedString.charAt(parsedString.length() - 1) != ' ') {
-                                parsedString.append(c);
-                            }
-                        }
-                    }
-                    else {
-                        // Normal characters
-                        parsedString.append(c);
-                    }
+                // Join all parsed arguments after "echo" with a single space
+                StringBuilder sb = new StringBuilder();
+                for (int i = 1; i < parts.size(); i++) {
+                    if (i > 1) sb.append(' ');
+                    sb.append(parts.get(i));
                 }
-
-                // Print the final result (using .trim() just in case there were trailing spaces outside quotes)
-                System.out.println(parsedString.toString().trim());
-                continue;
+                System.out.println(sb.toString());
             } else if (command.equals("type")) {
-                // The target of the type command is the second word
-                if (commandParts.length < 2) continue;
-                String target = commandParts[1];
+                if (parts.size() < 2) continue;
+                String target = parts.get(1);
 
                 if (target.equals("type") || target.equals("echo") || target.equals("exit")) {
                     System.out.println(target + " is a shell builtin");
@@ -93,12 +97,11 @@ public class Main {
                 String fullPath = getPath(command);
 
                 if (fullPath != null) {
-                    // Now you have the path needed to start the process!
-                    ProcessBuilder pb = new ProcessBuilder(commandParts);
+                    // Pass quote-aware parsed arguments to ProcessBuilder
+                    ProcessBuilder pb = new ProcessBuilder(parts);
                     pb.inheritIO().start().waitFor();
                 } else {
-                    // If it's not a builtin, and not in the PATH, then it's truly not found
-                    System.out.println(input + ": command not found");
+                    System.out.println(command + ": command not found");
                 }
             }
         }
