@@ -63,6 +63,10 @@ public class Main {
                     inSingleQuote = true;
                 } else if (c == '"') {
                     inDoubleQuote = true;
+                } else if (c == '\\' && i + 1 < input.length()) {
+                    // Backslash outside quotes: escape the next character (whatever it is)
+                    current.append(input.charAt(i + 1));
+                    i++;
                 } else if (c == ' ') {
                     if (current.length() > 0) {
                         args.add(current.toString());
