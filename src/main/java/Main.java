@@ -22,7 +22,6 @@ public class Main {
         return null;
     }
 
-    // Parses a raw input line into a list of arguments, respecting single quotes
     // Parses a raw input line into a list of arguments, respecting single and
     // double quotes
     public static List<String> parseArguments(String input) {
@@ -89,12 +88,12 @@ public class Main {
         if (content == null || filePath == null) {
             return;
         }
-
         try {
             File file = new File(filePath);
-            file.getParentFile().mkdirs(); // create parent dirs if needed
-
-            // Write content to the file
+            File parent = file.getParentFile();
+            if (parent != null) {
+                parent.mkdirs();
+            }
             java.io.FileWriter writer = new java.io.FileWriter(file);
             writer.write(content);
             writer.close();
@@ -105,7 +104,8 @@ public class Main {
 
     /**
      * Finds a redirect operator (> or 1>) in the raw input string (outside quotes).
-     * Returns an array: [commandPart, outputFilePath] or null if no redirection found.
+     * Returns an array: [commandPart, outputFilePath] or null if no redirection
+     * found.
      */
     public static String[] parseRedirection(String input) {
         boolean inSingleQuote = false;
@@ -115,27 +115,39 @@ public class Main {
             char c = input.charAt(i);
 
             if (inSingleQuote) {
-                if (c == '\'') inSingleQuote = false;
+                if (c == '\'')
+                    inSingleQuote = false;
             } else if (inDoubleQuote) {
-                if (c == '"') inDoubleQuote = false;
-                else if (c == '\\' && i + 1 < input.length()) i++; // skip escaped char
+                if (c == '"')
+                    inDoubleQuote = false;
+                else if (c == '\\' && i + 1 < input.length())
+                    i++; // skip escaped char
             } else {
-                if (c == '\'') inSingleQuote = true;
-                else if (c == '"') inDoubleQuote = true;
+                if (c == '\'')
+                    inSingleQuote = true;
+                else if (c == '"')
+                    inDoubleQuote = true;
                 else if (c == '\\' && i + 1 < input.length()) {
                     i++; // skip escaped char
-                } else if (c == '>' || (c == '1' && i + 1 < input.length() && input.charAt(i + 1) == '>')) {
+                } else if (c == '>' || (c == '1' && i + 1 < input.length() && input.charAt(i + 1) == '>')
+                        || (c == '2' && i + 1 < input.length() && input.charAt(i + 1) == '>')) {
                     // Found redirect operator
                     int opStart = i;
                     int opEnd;
+                    String type = null;
                     if (c == '1') {
                         opEnd = i + 2; // skip "1>"
+                        type = "1";
+                    } else if (c == '2') {
+                        opEnd = i + 2; // skip "2>"
+                        type = "2";
                     } else {
-                        opEnd = i + 1; // skip ">"
+                        opEnd = i + 1; // skip bare ">"
+                        type = "1";
                     }
                     String commandPart = input.substring(0, opStart).trim();
                     String filePath = input.substring(opEnd).trim();
-                    return new String[] { commandPart, filePath };
+                    return new String[] { commandPart, filePath, type };
                 }
             }
         }
@@ -155,10 +167,15 @@ public class Main {
             String[] redirection = parseRedirection(input);
             String commandInput;
             String outputFile = null;
+            String errorFile = null;
 
             if (redirection != null) {
                 commandInput = redirection[0];
-                outputFile = redirection[1];
+                if (redirection[2].equals("1")) {
+                    outputFile = redirection[1];
+                } else if (redirection[2].equals("2")) {
+                    errorFile = redirection[1];
+                }
             } else {
                 commandInput = input;
             }
@@ -170,7 +187,8 @@ public class Main {
             String command = parts.get(0);
 
             if (command.equals("exit")) {
-                break;
+                int exitCode = parts.size() > 1 ? Integer.parseInt(parts.get(1)) : 0;
+                System.exit(exitCode);
             } else if (command.equals("echo")) {
                 // Join all parsed arguments after "echo" with a single space
                 StringBuilder sb = new StringBuilder();
@@ -182,6 +200,9 @@ public class Main {
                 String result = sb.toString();
                 if (outputFile != null) {
                     writeToFile(outputFile, result + "\n");
+                } else if (errorFile != null) {
+                    System.out.println(result); // stdout still goes to terminal
+                    writeToFile(errorFile, ""); // create empty error file (no stderr from echo)
                 } else {
                     System.out.println(result);
                 }
@@ -191,7 +212,8 @@ public class Main {
                 String target = parts.get(1);
 
                 String result;
-                if (target.equals("type") || target.equals("echo") || target.equals("exit")) {
+                if (target.equals("type") || target.equals("echo") || target.equals("exit")
+                        || target.equals("pwd") || target.equals("cd")) {
                     result = target + " is a shell builtin";
                 } else {
                     String fullPath = getPath(target);
@@ -204,6 +226,9 @@ public class Main {
 
                 if (outputFile != null) {
                     writeToFile(outputFile, result + "\n");
+                } else if (errorFile != null) {
+                    System.out.println(result); // stdout still goes to terminal
+                    writeToFile(errorFile, ""); // no stderr from type
                 } else {
                     System.out.println(result);
                 }
@@ -216,8 +241,19 @@ public class Main {
                     if (outputFile != null) {
                         // Redirect only stdout to file; stderr stays on terminal
                         File outFile = new File(outputFile);
-                        outFile.getParentFile().mkdirs();
+                        File outParent = outFile.getParentFile();
+                        if (outParent != null) {
+                            outParent.mkdirs();
+                        }
                         pb.redirectOutput(outFile);
+                    } else if (errorFile != null) {
+                        // Redirect only stderr to file; stdout stays on terminal
+                        File errFile = new File(errorFile);
+                        File errParent = errFile.getParentFile();
+                        if (errParent != null) {
+                            errParent.mkdirs();
+                        }
+                        pb.redirectError(errFile);
                     }
                     pb.start().waitFor();
                 } else {
