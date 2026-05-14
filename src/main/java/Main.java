@@ -85,17 +85,88 @@ public class Main {
         return args;
     }
 
+    public static void writeToFile(String filePath, String content) {
+        if (content == null || filePath == null) {
+            return;
+        }
+
+        try {
+            File file = new File(filePath);
+            file.getParentFile().mkdirs(); // create parent dirs if needed
+
+            // Write content to the file
+            java.io.FileWriter writer = new java.io.FileWriter(file);
+            writer.write(content);
+            writer.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Finds a redirect operator (> or 1>) in the raw input string (outside quotes).
+     * Returns an array: [commandPart, outputFilePath] or null if no redirection found.
+     */
+    public static String[] parseRedirection(String input) {
+        boolean inSingleQuote = false;
+        boolean inDoubleQuote = false;
+
+        for (int i = 0; i < input.length(); i++) {
+            char c = input.charAt(i);
+
+            if (inSingleQuote) {
+                if (c == '\'') inSingleQuote = false;
+            } else if (inDoubleQuote) {
+                if (c == '"') inDoubleQuote = false;
+                else if (c == '\\' && i + 1 < input.length()) i++; // skip escaped char
+            } else {
+                if (c == '\'') inSingleQuote = true;
+                else if (c == '"') inDoubleQuote = true;
+                else if (c == '\\' && i + 1 < input.length()) {
+                    i++; // skip escaped char
+                } else if (c == '>' || (c == '1' && i + 1 < input.length() && input.charAt(i + 1) == '>')) {
+                    // Found redirect operator
+                    int opStart = i;
+                    int opEnd;
+                    if (c == '1') {
+                        opEnd = i + 2; // skip "1>"
+                    } else {
+                        opEnd = i + 1; // skip ">"
+                    }
+                    String commandPart = input.substring(0, opStart).trim();
+                    String filePath = input.substring(opEnd).trim();
+                    return new String[] { commandPart, filePath };
+                }
+            }
+        }
+        return null;
+    }
+
     public static void main(String[] args) throws Exception {
         Scanner scanner = new Scanner(System.in);
 
         while (true) {
             System.out.print("$ ");
-            String input = scanner.nextLine().trim(); // Use a separate variable for the whole line
+            String input = scanner.nextLine().trim();
             if (input.isEmpty())
                 continue;
 
-            // Parse the input with single-quote awareness
-            List<String> parts = parseArguments(input);
+            // Check for output redirection (> or 1>)
+            String[] redirection = parseRedirection(input);
+            String commandInput;
+            String outputFile = null;
+
+            if (redirection != null) {
+                commandInput = redirection[0];
+                outputFile = redirection[1];
+            } else {
+                commandInput = input;
+            }
+
+            // Parse the command input with quote awareness
+            List<String> parts = parseArguments(commandInput);
+            if (parts.isEmpty())
+                continue;
             String command = parts.get(0);
 
             if (command.equals("exit")) {
@@ -108,32 +179,47 @@ public class Main {
                         sb.append(' ');
                     sb.append(parts.get(i));
                 }
-                System.out.println(sb.toString());
+                String result = sb.toString();
+                if (outputFile != null) {
+                    writeToFile(outputFile, result + "\n");
+                } else {
+                    System.out.println(result);
+                }
             } else if (command.equals("type")) {
                 if (parts.size() < 2)
                     continue;
                 String target = parts.get(1);
 
+                String result;
                 if (target.equals("type") || target.equals("echo") || target.equals("exit")) {
-                    System.out.println(target + " is a shell builtin");
+                    result = target + " is a shell builtin";
                 } else {
                     String fullPath = getPath(target);
                     if (fullPath != null) {
-                        // FIX: type just prints the path, it doesn't run the process!
-                        System.out.println(target + " is " + fullPath);
+                        result = target + " is " + fullPath;
                     } else {
-                        // FIX: Print exactly "[target]: not found"
-                        System.out.println(target + ": not found");
+                        result = target + ": not found";
                     }
                 }
+
+                if (outputFile != null) {
+                    writeToFile(outputFile, result + "\n");
+                } else {
+                    System.out.println(result);
+                }
             } else {
-                // FIX: This is where external execution goes!
                 String fullPath = getPath(command);
 
                 if (fullPath != null) {
-                    // Pass quote-aware parsed arguments to ProcessBuilder
                     ProcessBuilder pb = new ProcessBuilder(parts);
-                    pb.inheritIO().start().waitFor();
+                    pb.inheritIO();
+                    if (outputFile != null) {
+                        // Redirect only stdout to file; stderr stays on terminal
+                        File outFile = new File(outputFile);
+                        outFile.getParentFile().mkdirs();
+                        pb.redirectOutput(outFile);
+                    }
+                    pb.start().waitFor();
                 } else {
                     System.out.println(command + ": command not found");
                 }
