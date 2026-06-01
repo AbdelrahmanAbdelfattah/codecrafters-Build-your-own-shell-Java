@@ -84,7 +84,7 @@ public class Main {
         return args;
     }
 
-    public static void writeToFile(String filePath, String content) {
+    public static void writeToFile(String filePath, String content, boolean append) {
         if (content == null || filePath == null) {
             return;
         }
@@ -94,7 +94,7 @@ public class Main {
             if (parent != null) {
                 parent.mkdirs();
             }
-            java.io.FileWriter writer = new java.io.FileWriter(file);
+            java.io.FileWriter writer = new java.io.FileWriter(file, append);
             writer.write(content);
             writer.close();
         } catch (Exception e) {
@@ -135,19 +135,34 @@ public class Main {
                     int opStart = i;
                     int opEnd;
                     String type = null;
+                    String mode = "overwrite";
                     if (c == '1') {
                         opEnd = i + 2; // skip "1>"
                         type = "1";
+                        // Check for 1>>
+                        if (opEnd < input.length() && input.charAt(opEnd) == '>') {
+                            opEnd++;
+                            mode = "append";
+                        }
                     } else if (c == '2') {
                         opEnd = i + 2; // skip "2>"
                         type = "2";
+                        if (opEnd < input.length() && input.charAt(opEnd) == '>') {
+                            opEnd++;
+                            mode = "append";
+                        }
                     } else {
                         opEnd = i + 1; // skip bare ">"
                         type = "1";
+                        // Check for >>
+                        if (opEnd < input.length() && input.charAt(opEnd) == '>') {
+                            opEnd++;
+                            mode = "append";
+                        }
                     }
                     String commandPart = input.substring(0, opStart).trim();
                     String filePath = input.substring(opEnd).trim();
-                    return new String[] { commandPart, filePath, type };
+                    return new String[] { commandPart, filePath, type, mode };
                 }
             }
         }
@@ -168,9 +183,11 @@ public class Main {
             String commandInput;
             String outputFile = null;
             String errorFile = null;
+            boolean appendMode = false;
 
             if (redirection != null) {
                 commandInput = redirection[0];
+                appendMode = redirection[3].equals("append");
                 if (redirection[2].equals("1")) {
                     outputFile = redirection[1];
                 } else if (redirection[2].equals("2")) {
@@ -199,10 +216,10 @@ public class Main {
                 }
                 String result = sb.toString();
                 if (outputFile != null) {
-                    writeToFile(outputFile, result + "\n");
+                    writeToFile(outputFile, result + "\n", appendMode);
                 } else if (errorFile != null) {
                     System.out.println(result); // stdout still goes to terminal
-                    writeToFile(errorFile, ""); // create empty error file (no stderr from echo)
+                    writeToFile(errorFile, "", appendMode); // create empty error file (no stderr from echo)
                 } else {
                     System.out.println(result);
                 }
@@ -225,10 +242,10 @@ public class Main {
                 }
 
                 if (outputFile != null) {
-                    writeToFile(outputFile, result + "\n");
+                    writeToFile(outputFile, result + "\n", appendMode);
                 } else if (errorFile != null) {
                     System.out.println(result); // stdout still goes to terminal
-                    writeToFile(errorFile, ""); // no stderr from type
+                    writeToFile(errorFile, "", appendMode); // no stderr from type
                 } else {
                     System.out.println(result);
                 }
@@ -245,7 +262,11 @@ public class Main {
                         if (outParent != null) {
                             outParent.mkdirs();
                         }
-                        pb.redirectOutput(outFile);
+                        if (appendMode) {
+                            pb.redirectOutput(ProcessBuilder.Redirect.appendTo(outFile));
+                        } else {
+                            pb.redirectOutput(outFile);
+                        }
                     } else if (errorFile != null) {
                         // Redirect only stderr to file; stdout stays on terminal
                         File errFile = new File(errorFile);
@@ -253,7 +274,11 @@ public class Main {
                         if (errParent != null) {
                             errParent.mkdirs();
                         }
-                        pb.redirectError(errFile);
+                        if (appendMode) {
+                            pb.redirectError(ProcessBuilder.Redirect.appendTo(errFile));
+                        } else {
+                            pb.redirectError(errFile);
+                        }
                     }
                     pb.start().waitFor();
                 } else {
