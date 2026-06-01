@@ -3,6 +3,14 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
+import org.jline.reader.Completer;
+import org.jline.reader.LineReader;
+import org.jline.reader.LineReaderBuilder;
+import org.jline.reader.UserInterruptException;
+import org.jline.reader.EndOfFileException;
+import org.jline.reader.impl.completer.StringsCompleter;
+import org.jline.terminal.Terminal;
+import org.jline.terminal.TerminalBuilder;
 
 public class Main {
 
@@ -170,11 +178,19 @@ public class Main {
     }
 
     public static void main(String[] args) throws Exception {
-        Scanner scanner = new Scanner(System.in);
+        Terminal terminal = TerminalBuilder.builder().system(true).build();
+        LineReader reader = LineReaderBuilder.builder()
+                .terminal(terminal)
+                .completer(new StringsCompleter("echo", "exit", "type", "pwd", "cd"))
+                .build();
 
         while (true) {
-            System.out.print("$ ");
-            String input = scanner.nextLine().trim();
+            String input;
+            try {
+                input = reader.readLine("$ ").trim();
+            } catch (EndOfFileException | UserInterruptException e) {
+                break;
+            }
             if (input.isEmpty())
                 continue;
 
