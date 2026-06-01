@@ -8,6 +8,7 @@ import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.UserInterruptException;
 import org.jline.reader.EndOfFileException;
+import org.jline.reader.impl.DefaultParser;
 import org.jline.reader.impl.completer.StringsCompleter;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
@@ -179,8 +180,12 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
         Terminal terminal = TerminalBuilder.builder().system(true).build();
+        DefaultParser parser = new DefaultParser();
+        parser.setEscapeChars(new char[]{});
+        parser.setQuoteChars(new char[]{});
         LineReader reader = LineReaderBuilder.builder()
                 .terminal(terminal)
+                .parser(parser)
                 .completer(new StringsCompleter("echo", "exit", "type", "pwd", "cd"))
                 .build();
 
