@@ -208,15 +208,15 @@ public class Main {
     public static void main(String[] args) throws Exception {
         Terminal terminal = TerminalBuilder.builder().system(true).build();
         DefaultParser parser = new DefaultParser();
-        parser.setEscapeChars(new char[]{});
-        parser.setQuoteChars(new char[]{});
+        parser.setEscapeChars(new char[] {});
+        parser.setQuoteChars(new char[] {});
 
         LineReader reader = LineReaderBuilder.builder()
                 .terminal(terminal)
                 .parser(parser)
                 .completer(new StringsCompleter(getCompletions()))
                 .build();
-
+        reader.setOpt(LineReader.Option.AUTO_LIST); // show candidates on 2nd TAB
         while (true) {
             String input;
             try {
