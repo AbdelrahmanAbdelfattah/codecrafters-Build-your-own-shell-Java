@@ -216,7 +216,7 @@ public class Main {
                 .parser(parser)
                 .completer(new StringsCompleter(getCompletions()))
                 .build();
-        reader.setOpt(LineReader.Option.AUTO_LIST); // show candidates on 2nd TAB
+
         while (true) {
             String input;
             try {
