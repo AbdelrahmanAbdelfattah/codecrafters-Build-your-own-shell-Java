@@ -221,6 +221,7 @@ public class Main {
         reader.unsetOpt(LineReader.Option.AUTO_MENU);
         reader.unsetOpt(LineReader.Option.MENU_COMPLETE);
         reader.unsetOpt(LineReader.Option.LIST_AMBIGUOUS);
+        reader.setVariable(LineReader.BELL_STYLE, "audible");
 
         while (true) {
             String input;
