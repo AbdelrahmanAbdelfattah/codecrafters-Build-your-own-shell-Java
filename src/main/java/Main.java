@@ -245,6 +245,7 @@ public class Main {
                             Collections.sort(names);
                             terminal.writer().println();
                             terminal.writer().println(String.join("  ", names));
+                            terminal.writer().print("$ " + word);
                             terminal.writer().flush();
                         } else {
                             // First TAB — ring bell
