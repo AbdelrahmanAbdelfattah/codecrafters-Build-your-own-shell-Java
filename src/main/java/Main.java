@@ -3,6 +3,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
+import org.jline.reader.Candidate;
 import org.jline.reader.Completer;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
@@ -212,16 +213,28 @@ public class Main {
         parser.setEscapeChars(new char[] {});
         parser.setQuoteChars(new char[] {});
 
+        List<String> allCompletions = getCompletions();
+
         LineReader reader = LineReaderBuilder.builder()
                 .terminal(terminal)
                 .parser(parser)
-                .completer(new StringsCompleter(getCompletions()))
+                .completer((r, line, candidates) -> {
+                    String word = line.word();
+                    for (String comp : allCompletions) {
+                        if (comp.startsWith(word)) {
+                            candidates.add(new Candidate(comp));
+                        }
+                    }
+                    if (candidates.size() > 1) {
+                        terminal.writer().print("\007");
+                        terminal.writer().flush();
+                    }
+                })
                 .build();
         reader.unsetOpt(LineReader.Option.AUTO_LIST);
         reader.unsetOpt(LineReader.Option.AUTO_MENU);
         reader.unsetOpt(LineReader.Option.MENU_COMPLETE);
         reader.unsetOpt(LineReader.Option.LIST_AMBIGUOUS);
-        reader.setVariable(LineReader.BELL_STYLE, "audible");
 
         while (true) {
             String input;
