@@ -6,6 +6,7 @@ import java.util.regex.Pattern;
 import org.jline.reader.Completer;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
+import org.jline.reader.Reference;
 import org.jline.reader.UserInterruptException;
 import org.jline.reader.EndOfFileException;
 import org.jline.reader.impl.DefaultParser;
@@ -217,6 +218,9 @@ public class Main {
                 .completer(new StringsCompleter(getCompletions()))
                 .build();
         reader.unsetOpt(LineReader.Option.AUTO_LIST);
+        reader.unsetOpt(LineReader.Option.AUTO_MENU);
+        reader.unsetOpt(LineReader.Option.MENU_COMPLETE);
+        reader.unsetOpt(LineReader.Option.LIST_AMBIGUOUS);
 
         while (true) {
             String input;
