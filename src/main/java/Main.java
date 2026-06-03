@@ -216,6 +216,7 @@ public class Main {
                 .parser(parser)
                 .completer(new StringsCompleter(getCompletions()))
                 .build();
+        reader.unsetOpt(LineReader.Option.AUTO_LIST);
 
         while (true) {
             String input;
