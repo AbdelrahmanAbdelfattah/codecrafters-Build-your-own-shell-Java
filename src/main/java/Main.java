@@ -2,6 +2,7 @@ import java.util.Scanner;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Collections;
 import java.util.regex.Pattern;
 import org.jline.reader.Candidate;
 import org.jline.reader.Completer;
@@ -16,6 +17,9 @@ import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 
 public class Main {
+
+    private static int tabCount = 0;
+    private static String lastWord = null;
 
     public static List<String> getCompletions() {
         List<String> completions = new ArrayList<>();
@@ -226,8 +230,27 @@ public class Main {
                         }
                     }
                     if (candidates.size() > 1) {
-                        terminal.writer().print("\007");
-                        terminal.writer().flush();
+                        if (word.equals(lastWord)) {
+                            tabCount++;
+                        } else {
+                            tabCount = 1;
+                            lastWord = word;
+                        }
+                        if (tabCount >= 2) {
+                            // Second TAB — show sorted list
+                            List<String> names = new ArrayList<>();
+                            for (Candidate c : candidates) {
+                                names.add(c.value());
+                            }
+                            Collections.sort(names);
+                            terminal.writer().println();
+                            terminal.writer().println(String.join("  ", names));
+                            terminal.writer().flush();
+                        } else {
+                            // First TAB — ring bell
+                            terminal.writer().print("\007");
+                            terminal.writer().flush();
+                        }
                     }
                 })
                 .build();
