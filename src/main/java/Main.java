@@ -233,8 +233,6 @@ public class Main {
                 .build();
         reader.unsetOpt(LineReader.Option.AUTO_LIST);
         reader.unsetOpt(LineReader.Option.AUTO_MENU);
-        reader.unsetOpt(LineReader.Option.MENU_COMPLETE);
-        reader.unsetOpt(LineReader.Option.LIST_AMBIGUOUS);
 
         while (true) {
             String input;
