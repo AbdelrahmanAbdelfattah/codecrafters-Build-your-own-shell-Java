@@ -15,6 +15,33 @@ import org.jline.terminal.TerminalBuilder;
 
 public class Main {
 
+    public static List<String> getCompletions() {
+        List<String> completions = new ArrayList<>();
+        completions.add("echo");
+        completions.add("exit");
+        completions.add("type");
+        completions.add("pwd");
+        completions.add("cd");
+
+        String pathVariable = System.getenv("PATH");
+        String[] directories = pathVariable.split(Pattern.quote(File.pathSeparator));
+        for (String directory : directories) {
+            File dir = new File(directory);
+            if (dir.isDirectory()) {
+                File[] files = dir.listFiles();
+                if (files != null) {
+                    for (File file : files) {
+                        if (file.canExecute() && !file.isDirectory()) {
+                            completions.add(file.getName());
+                        }
+                    }
+                }
+            }
+        }
+
+        return completions;
+    }
+
     public static String getPath(String command) {
         String pathVariable = System.getenv("PATH");
 
@@ -183,10 +210,11 @@ public class Main {
         DefaultParser parser = new DefaultParser();
         parser.setEscapeChars(new char[]{});
         parser.setQuoteChars(new char[]{});
+
         LineReader reader = LineReaderBuilder.builder()
                 .terminal(terminal)
                 .parser(parser)
-                .completer(new StringsCompleter("echo", "exit", "type", "pwd", "cd"))
+                .completer(new StringsCompleter(getCompletions()))
                 .build();
 
         while (true) {
