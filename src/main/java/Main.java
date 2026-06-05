@@ -224,11 +224,58 @@ public class Main {
                 .parser(parser)
                 .completer((r, line, candidates) -> {
                     String word = line.word();
-                    for (String comp : allCompletions) {
-                        if (comp.startsWith(word)) {
-                            candidates.add(new Candidate(comp));
+
+                    if (line.wordIndex() == 0) {
+                        // Command completion (first word)
+                        for (String comp : allCompletions) {
+                            if (comp.startsWith(word)) {
+                                candidates.add(new Candidate(comp));
+                            }
+                        }
+                    } else {
+                        // File/directory completion (arguments)
+                        String prefix = word;
+                        File dir;
+                        String filePrefix;
+
+                        // Check if the user typed a partial path (e.g. "subdir/fil")
+                        int lastSep = prefix.lastIndexOf('/');
+                        if (lastSep < 0) {
+                            lastSep = prefix.lastIndexOf(File.separatorChar);
+                        }
+
+                        if (lastSep >= 0) {
+                            String dirPath = prefix.substring(0, lastSep + 1);
+                            filePrefix = prefix.substring(lastSep + 1);
+                            dir = new File(dirPath);
+                        } else {
+                            dir = new File(".");
+                            filePrefix = prefix;
+                        }
+
+                        if (dir.isDirectory()) {
+                            File[] files = dir.listFiles();
+                            if (files != null) {
+                                for (File file : files) {
+                                    if (file.getName().startsWith(filePrefix)) {
+                                        String value;
+                                        if (lastSep >= 0) {
+                                            value = prefix.substring(0, lastSep + 1) + file.getName();
+                                        } else {
+                                            value = file.getName();
+                                        }
+                                        // Append '/' for directories so the user can keep navigating
+                                        if (file.isDirectory()) {
+                                            value += "/";
+                                        }
+                                        candidates.add(new Candidate(value));
+                                    }
+                                }
+                            }
                         }
                     }
+
+                    // Multi-tab behavior (bell on first, sorted list on second)
                     if (candidates.size() > 1) {
                         if (word.equals(lastWord)) {
                             tabCount++;
@@ -245,7 +292,7 @@ public class Main {
                             Collections.sort(names);
                             terminal.writer().println();
                             terminal.writer().println(String.join("  ", names));
-                            terminal.writer().print("$ " + word);
+                            terminal.writer().print("$ " + line.line());
                             terminal.writer().flush();
                         } else {
                             // First TAB — ring bell
