@@ -264,11 +264,14 @@ public class Main {
                                         } else {
                                             value = file.getName();
                                         }
-                                        // Append '/' for directories so the user can keep navigating
                                         if (file.isDirectory()) {
+                                            // Directory: append '/' and no trailing space (complete=false)
                                             value += "/";
+                                            candidates.add(new Candidate(value, value, null, null, null, null, false));
+                                        } else {
+                                            // File: trailing space added automatically (complete=true)
+                                            candidates.add(new Candidate(value, value, null, null, null, null, true));
                                         }
-                                        candidates.add(new Candidate(value));
                                     }
                                 }
                             }
