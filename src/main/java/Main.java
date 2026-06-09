@@ -389,6 +389,13 @@ public class Main {
                 } else {
                     System.out.println(result);
                 }
+            } else if (command.equals("complete")) {
+                if (parts.get(1).equals("-p")) {
+                    String target = parts.get(2);
+                    System.out.println("complete: " + target + ": no completion specification");
+
+                }
+
             } else {
                 String fullPath = getPath(command);
 
