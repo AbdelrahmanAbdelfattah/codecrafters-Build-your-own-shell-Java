@@ -370,7 +370,7 @@ public class Main {
 
                 String result;
                 if (target.equals("type") || target.equals("echo") || target.equals("exit")
-                        || target.equals("pwd") || target.equals("cd")) {
+                        || target.equals("pwd") || target.equals("cd") || target.equals("complete")) {
                     result = target + " is a shell builtin";
                 } else {
                     String fullPath = getPath(target);
